@@ -45,6 +45,30 @@ function autobind(_: any, _2: string, descriptor: PropertyDescriptor) {
   };
   return adjDescriptor
 }
+// ProjectList Class
+class ProjectList {
+  templateElement: HTMLTemplateElement;
+  hostElement: HTMLDivElement;
+  element: HTMLElement;
+
+  constructor(private type: 'active' | 'finished') {
+    // 抓 template1 ( 裡面有form )
+    this.templateElement = document.getElementById("project-list")! as HTMLTemplateElement;
+    // 抓 app 
+    this.hostElement = document.getElementById("app")! as HTMLDivElement; 
+    // importedNode = this.template.content 裡面有 form
+    const importedNode = document.importNode(this.templateElement.content, true);
+
+    // 抓取 form
+    this.element = importedNode.firstElementChild as HTMLElement;
+    this.element.id = `${this.type}-projects`;
+  }
+
+  private attach() {
+    
+  }
+}
+
 
 // ProjectInput class
 class ProjectInput {
@@ -102,7 +126,7 @@ class ProjectInput {
     if (
       !validate(titleValidatable) ||
       !validate(descriptionValidatable) ||
-      !validate(peopleValidatable)
+      !validate(peopleValidatable) 
     ) {
       alert('Invalid input, please try again!');
       return;
