@@ -1,3 +1,8 @@
+// Project Type
+class Project {
+  
+}
+
 // Project State Management
 class ProjectState {
   private listeners: any[] = [];
