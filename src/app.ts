@@ -52,14 +52,15 @@ class ProjectList {
   element: HTMLElement;
 
   constructor(private type: 'active' | 'finished') {
-    // 抓 template1 ( 裡面有form )
+    // 抓 template2 ( 裡面只有<li></li> )
     this.templateElement = document.getElementById("project-list")! as HTMLTemplateElement;
+    console.log(this.templateElement);
     // 抓 app 
     this.hostElement = document.getElementById("app")! as HTMLDivElement; 
-    // importedNode = this.template.content 裡面有 form
+    // importedNode = this.template.content ( 裡面只有<li></li> )
     const importedNode = document.importNode(this.templateElement.content, true);
 
-    // 抓取 form
+    // ( 裡面只有<li></li> )
     this.element = importedNode.firstElementChild as HTMLElement;
     this.element.id = `${this.type}-projects`;
     this.attach();
