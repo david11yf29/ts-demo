@@ -12,15 +12,23 @@ class Project {
 }
 
 // Project State Management
-type Listener = (items: Project[]) => void;
+type Listener<T> = (items: T[]) => void;
 
-class ProjectState {
-  private listeners: Listener[] = [];
+class State<T> {
+  protected listeners: Listener<T>[] = [];
+
+  addListner(listenerFn: Listener<T>) {
+    this.listeners.push(listenerFn);
+  }
+}
+
+class ProjectState extends State<Project> {
+  
   private projects: Project[] = [];
   private static instance: ProjectState;
 
   private constructor() {
-
+    super();
   }
 
   static getInstance() {
@@ -31,9 +39,7 @@ class ProjectState {
     return this.instance;
   }
 
-  addListner(listenerFn: Listener) {
-    this.listeners.push(listenerFn);
-  }
+  
 
   addProject(title: string, description: string, numOfPeople: number) {
     const newProject = new Project(
@@ -127,29 +133,24 @@ abstract class Component<T extends HTMLElement, U extends HTMLElement> {
   private attach(insertAtBeginning: boolean) {
     this.hostElement.insertAdjacentElement(insertAtBeginning ? 'afterbegin' : 'beforeend', this.element);
   }
+
+  abstract configure(): void;
+  abstract renderContent(): void;
 }
 
 // ProjectList Class
-class ProjectList {
-  templateElement: HTMLTemplateElement;
-  hostElement: HTMLDivElement;
-  element: HTMLElement;
+class ProjectList extends Component<HTMLDivElement, HTMLElement> {
   assignedProjects: Project[];
 
   constructor(private type: 'active' | 'finished') {
-    // 抓 template2 ( 裡面只有<li></li> )
-    this.templateElement = document.getElementById("project-list")! as HTMLTemplateElement;
-    console.log(this.templateElement);
-    // 抓 app 
-    this.hostElement = document.getElementById("app")! as HTMLDivElement;
+    super('project-list', 'app', false, `${type}-projects`)
     this.assignedProjects = []; 
-    // importedNode = this.template.content ( 裡面只有<li></li> )
-    const importedNode = document.importNode(this.templateElement.content, true);
 
-    // ( 裡面只有<li></li> )
-    this.element = importedNode.firstElementChild as HTMLElement;
-    this.element.id = `${this.type}-projects`;
+    this.configure();
+    this.renderContent();
+  }
 
+  configure() {
     projectState.addListner((projects: Project[]) => {
       const relevantProjects = projects.filter(prj => {
         if (this.type === 'active') {
@@ -160,9 +161,12 @@ class ProjectList {
       this.assignedProjects = relevantProjects;
       this.renderProjects();
     })
+  }
 
-    this.attach();
-    this.renderContent();
+  renderContent(){
+    const listId = `${this.type}-projects-list`;
+    this.element.querySelector('ul')!.id = listId;
+    this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
   }
 
   private renderProjects() {
@@ -174,48 +178,31 @@ class ProjectList {
       listEl.appendChild(listItem);
     }
   }
-
-  private renderContent(){
-    const listId = `${this.type}-projects-list`;
-    this.element.querySelector('ul')!.id = listId;
-    this.element.querySelector('h2')!.textContent = this.type.toUpperCase() + ' PROJECTS';
-  }
-
-  private attach() {
-    this.hostElement.insertAdjacentElement('beforeend', this.element);
-  }
 }
 
 
 // ProjectInput class
-class ProjectInput {
-  templateElement: HTMLTemplateElement;
-  hostElement: HTMLDivElement;
-  element: HTMLFormElement;
+class ProjectInput extends Component<HTMLDivElement, HTMLFormElement> {
   titleInputElement: HTMLInputElement;
   descriptionInputElement: HTMLInputElement;
   peopleInputElement: HTMLInputElement;
 
   // 把 form 抓到 app 裡面
   constructor() {
-    // 抓 template1 ( 裡面有form )
-    this.templateElement = document.getElementById("project-input")! as HTMLTemplateElement;
-    // 抓 app 
-    this.hostElement = document.getElementById("app")! as HTMLDivElement; 
-    // importedNode = this.template.content 裡面有 form
-    const importedNode = document.importNode(this.templateElement.content, true);
-
-    // 抓取 form
-    this.element = importedNode.firstElementChild as HTMLFormElement;
-    this.element.id = 'user-input';
+    super("project-input", "app", true, 'user-input');
 
     this.titleInputElement = this.element.querySelector('#title') as HTMLInputElement;
     this.descriptionInputElement = this.element.querySelector('#description') as HTMLInputElement;
     this.peopleInputElement = this.element.querySelector('#people') as HTMLInputElement;
 
     this.configure();
-    this.attach();
   }
+
+  configure() {
+    this.element.addEventListener('submit', this.submitHandler);
+  }
+
+  renderContent() {}
 
   private gatherUserInput(): [string, string, number] | void {
     const enteredTitle = this.titleInputElement.value;
@@ -270,16 +257,6 @@ class ProjectInput {
       projectState.addProject(title, desc, people);
       this.clearInputs();
     }
-  }
-
-  private configure() {
-    // console.log("2", this);
-    // this 指 ProjectInput
-    this.element.addEventListener('submit', this.submitHandler);
-  }
-
-  private attach() {
-    this.hostElement.insertAdjacentElement('afterbegin', this.element);
   }
 }
 
